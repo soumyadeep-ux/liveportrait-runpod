@@ -49,6 +49,10 @@ RUN cd /content/ComfyUI/custom_nodes/ComfyUI-VideoHelperSuite && \
 RUN cd /content/ComfyUI/custom_nodes/comfyui_controlnet_aux && \
     pip install -r requirements.txt || true
 
+# CRITICAL: Force numpy<2 after ALL requirements (they upgrade it to 2.x)
+RUN pip install "numpy<2" --force-reinstall && \
+    python -c "import numpy; print(f'NumPy version: {numpy.__version__}')"
+
 # Create model directories
 RUN mkdir -p /content/ComfyUI/models/insightface/models/buffalo_l && \
     mkdir -p /content/ComfyUI/models/liveportrait && \
