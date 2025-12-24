@@ -14,7 +14,9 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Python ML packages
+# IMPORTANT: Pin numpy<2 to avoid compatibility issues with onnxruntime and other packages
 RUN pip install --upgrade pip && \
+    pip install "numpy<2" && \
     pip install xformers==0.0.25 torchsde==0.2.6 einops==0.8.0 \
     diffusers==0.28.0 transformers==4.41.2 accelerate==0.30.1 \
     opencv-python==4.9.0.80 imageio==2.34.1 imageio-ffmpeg==0.4.9 \
