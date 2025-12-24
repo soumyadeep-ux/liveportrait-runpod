@@ -118,7 +118,8 @@ def get_liveportrait_workflow(source_image_path: str, driving_video_path: str,
             "inputs": {
                 "video": os.path.basename(driving_video_path),
                 "force_rate": 0,
-                "force_size": "Disabled",
+                "custom_width": 0,
+                "custom_height": 0,
                 "frame_load_cap": 0,
                 "skip_first_frames": 0,
                 "select_every_nth": 1
@@ -145,7 +146,7 @@ def get_liveportrait_workflow(source_image_path: str, driving_video_path: str,
             "class_type": "LivePortraitProcess",
             "inputs": {
                 "pipeline": ["1", 0],
-                "crop_info": ["5", 0],
+                "crop_info": ["5", 1],  # Index 1 is CROPINFO, index 0 is cropped IMAGE
                 "source_image": ["3", 0],
                 "driving_images": ["4", 0],
                 "lip_zero": False,
