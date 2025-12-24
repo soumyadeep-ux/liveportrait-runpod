@@ -288,10 +288,23 @@ def handler(event: dict) -> dict:
 
         print(f"Workflow completed: {result}")
 
-        # Find output video
+        # Debug: List all files in output directory
+        print(f"Checking output directory: {OUTPUT_DIR}")
+        all_files = list(Path(OUTPUT_DIR).glob("*"))
+        print(f"All files in output: {[str(f) for f in all_files]}")
+
+        # Find output video - check multiple patterns
         output_files = list(Path(OUTPUT_DIR).glob("liveportrait_output*.mp4"))
         if not output_files:
-            return {"error": "No output video generated"}
+            # Try any mp4 file
+            output_files = list(Path(OUTPUT_DIR).glob("*.mp4"))
+        if not output_files:
+            # Try any video file
+            output_files = list(Path(OUTPUT_DIR).glob("*.*"))
+            output_files = [f for f in output_files if f.suffix.lower() in ['.mp4', '.webm', '.avi', '.mov']]
+
+        if not output_files:
+            return {"error": f"No output video generated. Files in output dir: {[str(f) for f in all_files]}"}
 
         # Get the most recent output
         output_file = max(output_files, key=os.path.getctime)
