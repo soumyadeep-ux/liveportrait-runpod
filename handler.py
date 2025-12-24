@@ -78,24 +78,42 @@ def get_liveportrait_workflow(source_image_path: str, driving_video_path: str,
     """
     Generate a ComfyUI workflow for LivePortrait.
 
-    This creates a simple workflow that:
-    1. Loads the source image
-    2. Loads the driving video
-    3. Runs LivePortrait
-    4. Saves the output video
+    Workflow structure:
+    1. DownloadAndLoadLivePortraitModels -> pipeline
+    2. LivePortraitLoadCropper -> cropper
+    3. LoadImage -> source_image
+    4. VHS_LoadVideo -> driving_images (frames)
+    5. LivePortraitCropper -> crop_info
+    6. LivePortraitProcess -> animated frames
+    7. VHS_VideoCombine -> output video
     """
-    # Basic LivePortrait workflow
-    # Note: This is a simplified version. The actual workflow may need adjustment
-    # based on the specific ComfyUI-LivePortraitKJ node structure
-
     workflow = {
+        # Node 1: Load LivePortrait pipeline/models
         "1": {
+            "class_type": "DownloadAndLoadLivePortraitModels",
+            "inputs": {
+                "precision": "auto",
+                "mode": "human"
+            }
+        },
+        # Node 2: Load face cropper (InsightFace-based)
+        "2": {
+            "class_type": "LivePortraitLoadCropper",
+            "inputs": {
+                "onnx_device": "CUDA",
+                "keep_model_loaded": True,
+                "detection_threshold": 0.5
+            }
+        },
+        # Node 3: Load source image
+        "3": {
             "class_type": "LoadImage",
             "inputs": {
                 "image": os.path.basename(source_image_path)
             }
         },
-        "2": {
+        # Node 4: Load driving video as frames
+        "4": {
             "class_type": "VHS_LoadVideo",
             "inputs": {
                 "video": os.path.basename(driving_video_path),
@@ -106,22 +124,46 @@ def get_liveportrait_workflow(source_image_path: str, driving_video_path: str,
                 "select_every_nth": 1
             }
         },
-        "3": {
-            "class_type": "LivePortraitProcess",
+        # Node 5: Crop and prepare source face
+        "5": {
+            "class_type": "LivePortraitCropper",
             "inputs": {
-                "source_image": ["1", 0],
-                "driving_video": ["2", 0],
-                "flag_relative": kwargs.get("flag_relative", True),
-                "flag_do_crop": kwargs.get("flag_do_crop", True),
-                "flag_pasteback": kwargs.get("flag_pasteback", True),
-                "driving_smooth": kwargs.get("driving_smooth", True),
-                "driving_multiplier": kwargs.get("driving_multiplier", 1.0)
+                "pipeline": ["1", 0],
+                "cropper": ["2", 0],
+                "source_image": ["3", 0],
+                "dsize": 512,
+                "scale": 2.3,
+                "vx_ratio": 0.0,
+                "vy_ratio": -0.125,
+                "face_index": 0,
+                "face_index_order": "large-small",
+                "rotate": True
             }
         },
-        "4": {
+        # Node 6: Process with LivePortrait
+        "6": {
+            "class_type": "LivePortraitProcess",
+            "inputs": {
+                "pipeline": ["1", 0],
+                "crop_info": ["5", 0],
+                "source_image": ["3", 0],
+                "driving_images": ["4", 0],
+                "lip_zero": False,
+                "lip_zero_threshold": 0.03,
+                "stitching": True,
+                "delta_multiplier": kwargs.get("driving_multiplier", 1.0),
+                "mismatch_method": "constant",
+                "relative_motion_mode": kwargs.get("relative_motion_mode", "relative"),
+                "driving_smooth_observation_variance": 3e-6,
+                "expression_friendly": False,
+                "expression_friendly_multiplier": 1.0
+            }
+        },
+        # Node 7: Combine frames into video
+        "7": {
             "class_type": "VHS_VideoCombine",
             "inputs": {
-                "images": ["3", 0],
+                "images": ["6", 0],
                 "frame_rate": 25,
                 "loop_count": 0,
                 "filename_prefix": "liveportrait_output",
