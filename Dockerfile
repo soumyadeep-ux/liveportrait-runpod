@@ -55,9 +55,7 @@ RUN pip install "numpy<2" --force-reinstall && \
 
 # Create model directories
 RUN mkdir -p /content/ComfyUI/models/insightface/models/buffalo_l && \
-    mkdir -p /content/ComfyUI/models/liveportrait && \
-    mkdir -p /content/ComfyUI/models/liveportrait/base_models && \
-    mkdir -p /content/ComfyUI/models/liveportrait/retargeting_models
+    mkdir -p /content/ComfyUI/models/liveportrait
 
 # Download InsightFace models (buffalo_l)
 RUN aria2c --console-log-level=error -c -x 16 -s 16 -k 1M \
@@ -68,36 +66,37 @@ RUN aria2c --console-log-level=error -c -x 16 -s 16 -k 1M \
     https://huggingface.co/camenduru/LivePortrait/resolve/main/insightface/models/buffalo_l/2d106det.onnx \
     -d /content/ComfyUI/models/insightface/models/buffalo_l -o 2d106det.onnx
 
-# Download LivePortrait landmark model (in liveportrait/ root)
+# Download LivePortrait models from Kijai's safetensors repo
+# IMPORTANT: ComfyUI-LivePortraitKJ uses .safetensors format, NOT .pth!
+# Files go directly in /models/liveportrait/ (NOT in base_models/ subdirectory)
+# Source: https://huggingface.co/Kijai/LivePortrait_safetensors
+
 RUN aria2c --console-log-level=error -c -x 16 -s 16 -k 1M \
-    https://huggingface.co/camenduru/LivePortrait/resolve/main/liveportrait/landmark.onnx \
+    https://huggingface.co/Kijai/LivePortrait_safetensors/resolve/main/appearance_feature_extractor.safetensors \
+    -d /content/ComfyUI/models/liveportrait -o appearance_feature_extractor.safetensors
+
+RUN aria2c --console-log-level=error -c -x 16 -s 16 -k 1M \
+    https://huggingface.co/Kijai/LivePortrait_safetensors/resolve/main/motion_extractor.safetensors \
+    -d /content/ComfyUI/models/liveportrait -o motion_extractor.safetensors
+
+RUN aria2c --console-log-level=error -c -x 16 -s 16 -k 1M \
+    https://huggingface.co/Kijai/LivePortrait_safetensors/resolve/main/spade_generator.safetensors \
+    -d /content/ComfyUI/models/liveportrait -o spade_generator.safetensors
+
+RUN aria2c --console-log-level=error -c -x 16 -s 16 -k 1M \
+    https://huggingface.co/Kijai/LivePortrait_safetensors/resolve/main/warping_module.safetensors \
+    -d /content/ComfyUI/models/liveportrait -o warping_module.safetensors
+
+RUN aria2c --console-log-level=error -c -x 16 -s 16 -k 1M \
+    https://huggingface.co/Kijai/LivePortrait_safetensors/resolve/main/stitching_retargeting_module.safetensors \
+    -d /content/ComfyUI/models/liveportrait -o stitching_retargeting_module.safetensors
+
+RUN aria2c --console-log-level=error -c -x 16 -s 16 -k 1M \
+    https://huggingface.co/Kijai/LivePortrait_safetensors/resolve/main/landmark.onnx \
     -d /content/ComfyUI/models/liveportrait -o landmark.onnx
-
-# Download LivePortrait base models (.pth format, NOT .safetensors!)
-RUN aria2c --console-log-level=error -c -x 16 -s 16 -k 1M \
-    https://huggingface.co/camenduru/LivePortrait/resolve/main/liveportrait/base_models/appearance_feature_extractor.pth \
-    -d /content/ComfyUI/models/liveportrait/base_models -o appearance_feature_extractor.pth
-
-RUN aria2c --console-log-level=error -c -x 16 -s 16 -k 1M \
-    https://huggingface.co/camenduru/LivePortrait/resolve/main/liveportrait/base_models/motion_extractor.pth \
-    -d /content/ComfyUI/models/liveportrait/base_models -o motion_extractor.pth
-
-RUN aria2c --console-log-level=error -c -x 16 -s 16 -k 1M \
-    https://huggingface.co/camenduru/LivePortrait/resolve/main/liveportrait/base_models/spade_generator.pth \
-    -d /content/ComfyUI/models/liveportrait/base_models -o spade_generator.pth
-
-RUN aria2c --console-log-level=error -c -x 16 -s 16 -k 1M \
-    https://huggingface.co/camenduru/LivePortrait/resolve/main/liveportrait/base_models/warping_module.pth \
-    -d /content/ComfyUI/models/liveportrait/base_models -o warping_module.pth
-
-# Download LivePortrait retargeting model
-RUN aria2c --console-log-level=error -c -x 16 -s 16 -k 1M \
-    https://huggingface.co/camenduru/LivePortrait/resolve/main/liveportrait/retargeting_models/stitching_retargeting_module.pth \
-    -d /content/ComfyUI/models/liveportrait/retargeting_models -o stitching_retargeting_module.pth
 
 # Verify downloads
 RUN ls -la /content/ComfyUI/models/liveportrait/ && \
-    ls -la /content/ComfyUI/models/liveportrait/base_models/ && \
     ls -la /content/ComfyUI/models/insightface/models/buffalo_l/
 
 WORKDIR /content/ComfyUI
